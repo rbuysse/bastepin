@@ -1,0 +1,4 @@
+bind = "0.0.0.0:3001"
+debug = false
+serve_path = "/p/"
+upload_path = "./pastes/"

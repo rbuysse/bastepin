@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pastebin</title>
+
+    <style>
+      body,
+      html {
+        height: 100%;
+        margin: 0;
+        font-family: monospace;
+      }
+
+      .full-page-drop-area {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        border: 5px dashed #ccc;
+        text-align: center;
+      }
+
+      #browse {
+        color: blue;
+        cursor: pointer;
+      }
+
+      .drag-over {
+        border-color: #007bff;
+      }
+
+      #spinner {
+        display: none;
+      }
+
+      #error {
+        color: #bd0000;
+        font-weight: 500;
+        visibility: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="drop-area" class="full-page-drop-area">
+      <span id="center-text">
+        <p>paste text (ctrl/cmd+v)</p>
+        <p id="error">⚠</p>
+      </span>
+      <div id="spinner">uploading...</div>
+    </div>
+    <script src="static/script.js"></script>
+  </body>
+</html>
