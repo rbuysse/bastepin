@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Browse Public Pastes</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: monospace;
+        background: #0d1117;
+        color: #c9d1d9;
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #30363d;
+      }
+
+      h1 {
+        margin: 0;
+        color: #58a6ff;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        background: #238636;
+        border: 1px solid #2ea043;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: monospace;
+      }
+
+      .btn-secondary {
+        background: #21262d;
+        border: 1px solid #30363d;
+      }
+
+      .paste-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .paste-item {
+        background: #161b22;
+        border: 1px solid #30363d;
+        padding: 15px;
+        margin-bottom: 10px;
+      }
+
+      .paste-item:hover {
+        border-color: #58a6ff;
+      }
+
+      .paste-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .paste-title {
+        font-size: 16px;
+        font-weight: bold;
+        color: #c9d1d9;
+      }
+
+      .paste-id {
+        color: #58a6ff;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 14px;
+      }
+
+      .paste-id:hover {
+        text-decoration: underline;
+      }
+
+      .paste-meta {
+        color: #8b949e;
+        font-size: 13px;
+        margin-top: 5px;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #1f6feb;
+        color: white;
+        border-radius: 12px;
+        font-size: 11px;
+        margin-left: 8px;
+      }
+
+      .no-pastes {
+        text-align: center;
+        color: #8b949e;
+        margin-top: 50px;
+      }
+
+      .paste-preview {
+        background: #0d1117;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        color: #8b949e;
+        white-space: pre-wrap;
+        overflow: hidden;
+        max-height: 100px;
+        margin-top: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🌐 Browse Public Pastes</h1>
+      <div>
+        <a href="/" class="btn">Create New Paste</a>
+        {{ if .Username }}
+          <a href="/my-pastes" class="btn btn-secondary">My Pastes</a>
+        {{ end }}
+      </div>
+    </div>
+
+    {{ if .Pastes }}
+      <ul class="paste-list">
+        {{ range .Pastes }}
+          <li class="paste-item">
+            <div class="paste-header">
+              <div>
+                {{ if .Title }}
+                  <div class="paste-title">{{ .Title }}</div>
+                {{ end }}
+                <a href="/p/{{ .ID }}" class="paste-id">{{ .ID }}</a>
+                <span class="badge">{{ .Language }}</span>
+                {{ if .User }}
+                  <span class="paste-meta">by {{ .User.Username }}</span>
+                {{ else }}
+                  <span class="paste-meta">by anonymous</span>
+                {{ end }}
+              </div>
+            </div>
+            <div class="paste-meta">
+              Created: {{ .CreatedAt.Format "2006-01-02 15:04:05" }}
+            </div>
+            <div class="paste-preview">{{ .Content }}</div>
+          </li>
+        {{ end }}
+      </ul>
+    {{ else }}
+      <div class="no-pastes">
+        <p>No public pastes yet. <a href="/" style="color: #58a6ff;">Create the first one!</a></p>
+      </div>
+    {{ end }}
+  </body>
+</html>

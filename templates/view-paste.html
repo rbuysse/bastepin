@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paste - {{ .Paste.ID }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <style>
+      body {
+        margin: 0;
+        font-family: monospace;
+        background: #0d1117;
+        color: #c9d1d9;
+      }
+
+      .header {
+        padding: 15px 20px;
+        background: #161b22;
+        border-bottom: 1px solid #30363d;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .header-left {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .header-right {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn {
+        padding: 6px 16px;
+        background: #238636;
+        border: 1px solid #2ea043;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: monospace;
+        font-size: 14px;
+      }
+
+      .btn:hover {
+        background: #2ea043;
+      }
+
+      .btn-secondary {
+        background: #21262d;
+        border: 1px solid #30363d;
+      }
+
+      .btn-secondary:hover {
+        background: #30363d;
+      }
+
+      .meta {
+        color: #8b949e;
+        font-size: 13px;
+      }
+
+      .content {
+        padding: 0;
+        margin: 0;
+      }
+
+      pre {
+        margin: 0;
+        padding: 20px;
+        overflow-x: auto;
+      }
+
+      code {
+        font-family: 'Courier New', Consolas, monospace;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        background: #1f6feb;
+        color: white;
+        border-radius: 12px;
+        font-size: 11px;
+        margin-left: 10px;
+      }
+
+      .badge.private {
+        background: #da3633;
+      }
+
+      .markdown-content {
+        padding: 20px;
+        line-height: 1.6;
+      }
+
+      .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+        border-bottom: 1px solid #30363d;
+        padding-bottom: 8px;
+        margin-top: 24px;
+      }
+
+      .markdown-content a {
+        color: #58a6ff;
+      }
+
+      .markdown-content code {
+        background: #161b22;
+        padding: 2px 6px;
+        border-radius: 3px;
+      }
+
+      .markdown-content pre {
+        background: #161b22;
+        padding: 16px;
+        border-radius: 6px;
+        overflow-x: auto;
+      }
+
+      .markdown-content blockquote {
+        border-left: 3px solid #30363d;
+        padding-left: 16px;
+        color: #8b949e;
+      }
+
+      .markdown-content table {
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      .markdown-content th, .markdown-content td {
+        border: 1px solid #30363d;
+        padding: 8px;
+      }
+
+      .markdown-content th {
+        background: #161b22;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="header-left">
+        <a href="/" style="color: #58a6ff; text-decoration: none;">📋 Pastebin</a>
+        <span class="meta">
+          {{ if .Paste.Title }}
+            <strong>{{ .Paste.Title }}</strong> •
+          {{ end }}
+          Paste ID: <strong>{{ .Paste.ID }}</strong>
+          {{ if .Paste.Language }}
+            <span class="badge">{{ .Paste.Language }}</span>
+          {{ end }}
+          {{ if .Paste.IsPrivate }}
+            <span class="badge private">PRIVATE</span>
+          {{ end }}
+          {{ if .Paste.Unlisted }}
+            <span class="badge" style="background: #6e7681;">UNLISTED</span>
+          {{ end }}
+        </span>
+      </div>
+      <div class="header-right">
+        {{ if .CanEdit }}
+          <a href="/edit/{{ .Paste.ID }}" class="btn">Edit</a>
+        {{ end }}
+        <a href="{{ .Paste.ID }}?raw=1" class="btn btn-secondary">Raw</a>
+        <button onclick="copyToClipboard()" class="btn btn-secondary">Copy</button>
+        {{ if .Username }}
+          <a href="/my-pastes" class="btn btn-secondary">My Pastes</a>
+        {{ end }}
+      </div>
+    </div>
+
+    <div class="content">
+      {{ if eq .Paste.Language "markdown" }}
+        <div id="markdown-content" class="markdown-content"></div>
+        <pre style="display: none;"><code id="paste-code">{{ .Paste.Content }}</code></pre>
+      {{ else }}
+        <pre><code id="paste-code" class="language-{{ .Paste.Language }}">{{ .Paste.Content }}</code></pre>
+      {{ end }}
+    </div>
+
+    <script>
+      {{ if eq .Paste.Language "markdown" }}
+        // Render markdown
+        const markdownContent = document.getElementById('paste-code').textContent;
+        const renderedHTML = marked.parse(markdownContent);
+        document.getElementById('markdown-content').innerHTML = renderedHTML;
+      {{ else }}
+        hljs.highlightAll();
+      {{ end }}
+
+      function copyToClipboard() {
+        const code = document.getElementById('paste-code').textContent;
+        navigator.clipboard.writeText(code).then(() => {
+          const btn = event.target;
+          const originalText = btn.textContent;
+          btn.textContent = 'Copied!';
+          setTimeout(() => btn.textContent = originalText, 2000);
+        });
+      }
+    </script>
+  </body>
+</html>

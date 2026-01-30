@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Panel</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: monospace;
+        background: #0d1117;
+        color: #c9d1d9;
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #30363d;
+      }
+
+      h1 {
+        margin: 0;
+        color: #58a6ff;
+      }
+
+      .btn {
+        padding: 8px 16px;
+        background: #238636;
+        border: 1px solid #2ea043;
+        color: white;
+        text-decoration: none;
+        cursor: pointer;
+        font-family: monospace;
+      }
+
+      .btn:hover {
+        background: #2ea043;
+      }
+
+      .btn-danger {
+        background: #da3633;
+        border-color: #f85149;
+      }
+
+      .btn-danger:hover {
+        background: #f85149;
+      }
+
+      .user-list {
+        list-style: none;
+        padding: 0;
+      }
+
+      .user-item {
+        background: #161b22;
+        border: 1px solid #30363d;
+        padding: 15px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .user-info {
+        flex: 1;
+      }
+
+      .username {
+        color: #58a6ff;
+        font-weight: bold;
+        font-size: 15px;
+      }
+
+      .user-meta {
+        color: #8b949e;
+        font-size: 13px;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>⚙️ Admin Panel - {{ .Username }}</h1>
+      <a href="/" class="btn">Back to Home</a>
+    </div>
+
+    <h3>All Users ({{ len .Users }})</h3>
+    {{ if .Users }}
+      <ul class="user-list">
+        {{ range .Users }}
+          <li class="user-item">
+            <div class="user-info">
+              <div class="username">{{ .Username }} (ID: {{ .ID }})</div>
+              <div class="user-meta">
+                Joined: {{ .CreatedAt.Format "2006-01-02 15:04:05" }}
+              </div>
+            </div>
+            <button class="btn btn-danger" onclick="deleteUser({{ .ID }}, '{{ .Username }}')">Delete User</button>
+          </li>
+        {{ end }}
+      </ul>
+    {{ else }}
+      <div style="text-align: center; color: #8b949e; margin-top: 50px;">
+        <p>No users found.</p>
+      </div>
+    {{ end }}
+
+    <script>
+      async function deleteUser(userId, username) {
+        if (!confirm(`Are you sure you want to delete user "${username}"? This will delete all their pastes, sessions, and API keys. This action cannot be undone.`)) {
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/admin/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+          });
+
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            const error = await response.text();
+            alert('Failed to delete user: ' + error);
+          }
+        } catch (error) {
+          alert('Failed to delete user: ' + error);
+        }
+      }
+    </script>
+  </body>
+</html>

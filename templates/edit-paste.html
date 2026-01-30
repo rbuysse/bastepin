@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Edit Paste - {{ .ID }}</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: monospace;
+        background: #0d1117;
+        color: #c9d1d9;
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #30363d;
+      }
+
+      h1 {
+        margin: 0;
+        color: #58a6ff;
+      }
+
+      .controls {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        align-items: center;
+      }
+
+      .controls label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .controls select {
+        padding: 5px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        color: #c9d1d9;
+        font-family: monospace;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 500px;
+        padding: 15px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        color: #c9d1d9;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        resize: vertical;
+        box-sizing: border-box;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #58a6ff;
+      }
+
+      .btn {
+        padding: 10px 30px;
+        background: #238636;
+        border: 1px solid #2ea043;
+        color: white;
+        cursor: pointer;
+        font-family: monospace;
+        font-size: 16px;
+      }
+
+      .btn:hover {
+        background: #2ea043;
+      }
+
+      .btn-secondary {
+        background: #21262d;
+        border: 1px solid #30363d;
+      }
+
+      .btn-secondary:hover {
+        background: #30363d;
+      }
+
+      #status {
+        color: #58a6ff;
+        margin-top: 10px;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>✏️ Edit Paste - {{ .ID }}</h1>
+      <a href="/p/{{ .ID }}" class="btn btn-secondary">View Paste</a>
+    </div>
+
+    <div class="controls">
+      <label>
+        Title:
+        <input type="text" id="paste-title" value="{{ .Title }}" placeholder="Untitled paste" style="padding: 5px; background: #161b22; border: 1px solid #30363d; color: #c9d1d9; font-family: monospace; width: 300px;" />
+      </label>
+      <label>
+        Language:
+        <select id="language">
+          <option value="text" {{ if eq .Language "text" }}selected{{ end }}>Plain Text</option>
+          <option value="markdown" {{ if eq .Language "markdown" }}selected{{ end }}>Markdown</option>
+          <option value="python" {{ if eq .Language "python" }}selected{{ end }}>Python</option>
+          <option value="javascript" {{ if eq .Language "javascript" }}selected{{ end }}>JavaScript</option>
+          <option value="bash" {{ if eq .Language "bash" }}selected{{ end }}>Bash</option>
+          <option value="go" {{ if eq .Language "go" }}selected{{ end }}>Go</option>
+          <option value="java" {{ if eq .Language "java" }}selected{{ end }}>Java</option>
+          <option value="sql" {{ if eq .Language "sql" }}selected{{ end }}>SQL</option>
+          <option value="json" {{ if eq .Language "json" }}selected{{ end }}>JSON</option>
+          <option value="yaml" {{ if eq .Language "yaml" }}selected{{ end }}>YAML</option>
+          <option value="html" {{ if eq .Language "html" }}selected{{ end }}>HTML</option>
+          <option value="css" {{ if eq .Language "css" }}selected{{ end }}>CSS</option>
+        </select>
+      </label>
+      <label>
+        <input type="checkbox" id="is-unlisted" {{ if .Unlisted }}checked{{ end }} />
+        Unlisted
+      </label>
+    </div>
+
+    <textarea id="paste-content">{{ .Content }}</textarea>
+
+    <div class="button-group">
+      <button class="btn" onclick="saveChanges()">Save Changes</button>
+      <a href="/my-pastes" class="btn btn-secondary" style="text-decoration: none; line-height: 16px;">My Pastes</a>
+      <a href="/" class="btn btn-secondary" style="text-decoration: none; line-height: 16px;">Home</a>
+      <button class="btn" style="background: #da3633; border-color: #f85149;" onclick="deletePaste()">Delete Paste</button>
+    </div>
+
+    <div id="status"></div>
+
+    <script>
+      const pasteId = '{{ .ID }}';
+
+      async function saveChanges() {
+        const title = document.getElementById('paste-title').value;
+        const content = document.getElementById('paste-content').value;
+        const language = document.getElementById('language').value;
+        const unlisted = document.getElementById('is-unlisted').checked;
+
+        if (!content.trim()) {
+          showStatus('Content cannot be empty', true);
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/paste/update/' + pasteId, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, content, language, unlisted })
+          });
+
+          if (response.ok) {
+            showStatus('Changes saved successfully!', false);
+            setTimeout(() => {
+              window.location.href = '/p/' + pasteId;
+            }, 1000);
+          } else {
+            const error = await response.text();
+            showStatus('Failed to save: ' + error, true);
+          }
+        } catch (error) {
+          showStatus('Failed to save: ' + error, true);
+        }
+      }
+
+      function showStatus(message, isError) {
+        const status = document.getElementById('status');
+        status.textContent = message;
+        status.style.color = isError ? '#f85149' : '#58a6ff';
+      }
+
+      async function deletePaste() {
+        if (!confirm('Are you sure you want to delete this paste? This action cannot be undone.')) {
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/paste/delete/' + pasteId, {
+            method: 'POST'
+          });
+
+          if (response.ok) {
+            showStatus('Paste deleted successfully!', false);
+            setTimeout(() => {
+              window.location.href = '/my-pastes';
+            }, 1000);
+          } else {
+            const error = await response.text();
+            showStatus('Failed to delete: ' + error, true);
+          }
+        } catch (error) {
+          showStatus('Failed to delete: ' + error, true);
+        }
+      }
+
+      // Auto-save reminder on Ctrl+S
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+          e.preventDefault();
+          saveChanges();
+        }
+      });
+    </script>
+  </body>
+</html>
