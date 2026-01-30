@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pastebin</title>
+
+    <style>
+      body,
+      html {
+        height: 100%;
+        margin: 0;
+        font-family: monospace;
+        background: #1e1e1e;
+        color: #d4d4d4;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #333;
+      }
+
+      .auth-section {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .auth-section input {
+        padding: 5px 10px;
+        background: #2d2d2d;
+        border: 1px solid #444;
+        color: #d4d4d4;
+        font-family: monospace;
+      }
+
+      .auth-section button, .btn {
+        padding: 5px 15px;
+        background: #007acc;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-family: monospace;
+      }
+
+      .auth-section button:hover, .btn:hover {
+        background: #005a9e;
+      }
+
+      .controls {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+        align-items: center;
+      }
+
+      .controls label {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .controls select {
+        padding: 5px;
+        background: #2d2d2d;
+        border: 1px solid #444;
+        color: #d4d4d4;
+        font-family: monospace;
+      }
+
+      textarea {
+        flex: 1;
+        width: 100%;
+        padding: 15px;
+        background: #2d2d2d;
+        border: 1px solid #444;
+        color: #d4d4d4;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        resize: none;
+        box-sizing: border-box;
+      }
+
+      textarea:focus {
+        outline: none;
+        border-color: #007acc;
+      }
+
+      .submit-btn {
+        margin-top: 10px;
+        padding: 10px 30px;
+        background: #0e639c;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-family: monospace;
+        font-size: 16px;
+      }
+
+      .submit-btn:hover {
+        background: #1177bb;
+      }
+
+      #status {
+        color: #ce9178;
+        margin-top: 10px;
+        min-height: 20px;
+      }
+
+      .user-info {
+        color: #4ec9b0;
+      }
+
+      #spinner {
+        display: none;
+        color: #ce9178;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h2>📋 Pastebin</h2>
+        <div class="auth-section" id="auth-section">
+          <span id="loading">Loading...</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <label>
+          Title (optional):
+          <input type="text" id="paste-title" placeholder="Untitled paste" style="padding: 5px; background: #2d2d2d; border: 1px solid #444; color: #d4d4d4; font-family: monospace; width: 300px;" />
+        </label>
+        <label>
+          Language:
+          <select id="language">
+            <option value="text">Plain Text</option>
+            <option value="markdown">Markdown</option>
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+            <option value="bash">Bash</option>
+            <option value="go">Go</option>
+            <option value="java">Java</option>
+            <option value="sql">SQL</option>
+            <option value="json">JSON</option>
+            <option value="yaml">YAML</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+          </select>
+        </label>
+        <label id="private-control" style="display: none;">
+          <input type="checkbox" id="is-private" />
+          Private
+        </label>
+        <label id="unlisted-control" style="display: none;">
+          <input type="checkbox" id="is-unlisted" />
+          Unlisted
+        </label>
+        <label>
+          Expires:
+          <select id="expires-in">
+            <option value="">Never</option>
+            <option value="10">10 minutes</option>
+            <option value="60">1 hour</option>
+            <option value="1440">1 day</option>
+            <option value="10080">1 week</option>
+            <option value="43200">30 days</option>
+          </select>
+        </label>
+      </div>
+
+      <textarea id="paste-content" placeholder="Paste your text here or press Ctrl/Cmd+V..."></textarea>
+
+      <button class="submit-btn" onclick="submitPaste()">Create Paste</button>
+
+      <div id="status"></div>
+      <div id="spinner">Uploading...</div>
+    </div>
+
+    <script>
+      let currentUser = null;
+
+      async function checkAuth() {
+        try {
+          const response = await fetch('/api/me');
+          const data = await response.json();
+          currentUser = data.authenticated ? data : null;
+          updateAuthUI();
+        } catch (error) {
+          console.error('Auth check failed:', error);
+          updateAuthUI();
+        }
+      }
+
+      function updateAuthUI() {
+        const authSection = document.getElementById('auth-section');
+        const privateControl = document.getElementById('private-control');
+        const unlistedControl = document.getElementById('unlisted-control');
+
+        if (currentUser) {
+          authSection.innerHTML = `
+            <span class="user-info">${currentUser.username}</span>
+            <button onclick="window.location.href='/my-pastes'">My Pastes</button>
+            <button onclick="window.location.href='/all'">Browse</button>
+            <button onclick="window.location.href='/api-keys'">API Keys</button>
+            <button onclick="logout()">Logout</button>
+          `;
+          privateControl.style.display = 'flex';
+          unlistedControl.style.display = 'flex';
+        } else {
+          authSection.innerHTML = `
+            <input type="text" id="username" placeholder="Username" />
+            <input type="password" id="password" placeholder="Password" />
+            <button onclick="login()">Login</button>
+            <button onclick="register()">Register</button>
+            <button onclick="window.location.href='/all'">Browse</button>
+          `;
+          privateControl.style.display = 'none';
+          unlistedControl.style.display = 'none';
+        }
+      }
+
+      async function register() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+          const response = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+
+          if (response.ok) {
+            await checkAuth();
+            showStatus('Registered successfully!');
+          } else {
+            const error = await response.text();
+            showStatus('Registration failed: ' + error);
+          }
+        } catch (error) {
+          showStatus('Registration failed: ' + error);
+        }
+      }
+
+      async function login() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        try {
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+
+          if (response.ok) {
+            await checkAuth();
+            showStatus('Logged in successfully!');
+          } else {
+            const error = await response.text();
+            showStatus('Login failed: ' + error);
+          }
+        } catch (error) {
+          showStatus('Login failed: ' + error);
+        }
+      }
+
+      async function logout() {
+        try {
+          await fetch('/api/logout', { method: 'POST' });
+          currentUser = null;
+          updateAuthUI();
+          showStatus('Logged out');
+        } catch (error) {
+          console.error('Logout failed:', error);
+        }
+      }
+
+      async function submitPaste() {
+        const title = document.getElementById('paste-title').value;
+        const content = document.getElementById('paste-content').value;
+        const language = document.getElementById('language').value;
+        const isPrivate = document.getElementById('is-private').checked;
+        const unlisted = document.getElementById('is-unlisted').checked;
+        const expiresInValue = document.getElementById('expires-in').value;
+        const expiresIn = expiresInValue ? parseInt(expiresInValue) : null;
+
+        if (!content.trim()) {
+          showStatus('Please enter some content');
+          return;
+        }
+
+        if (isPrivate && !currentUser) {
+          showStatus('Must be logged in to create private pastes');
+          return;
+        }
+
+        document.getElementById('spinner').style.display = 'block';
+        document.getElementById('status').textContent = '';
+
+        try {
+          const response = await fetch('/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              title,
+              content, 
+              language, 
+              is_private: isPrivate,
+              unlisted,
+              expires_in: expiresIn
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            window.location.href = data.url;
+          } else {
+            const error = await response.text();
+            showStatus('Upload failed: ' + error);
+          }
+        } catch (error) {
+          showStatus('Upload failed: ' + error);
+        } finally {
+          document.getElementById('spinner').style.display = 'none';
+        }
+      }
+
+      function showStatus(message) {
+        const status = document.getElementById('status');
+        status.textContent = message;
+        setTimeout(() => status.textContent = '', 5000);
+      }
+
+      // Keyboard shortcut for paste
+      document.addEventListener('paste', (event) => {
+        if (event.target.id !== 'paste-content') {
+          const text = event.clipboardData.getData('text');
+          if (text) {
+            document.getElementById('paste-content').value = text;
+            document.getElementById('paste-content').focus();
+          }
+        }
+      });
+
+      // Check auth on load
+      checkAuth();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,4 @@
+bind = "0.0.0.0:3001"
+database_path = "./pastes.db"
+debug = false
+serve_path = "/p/"
